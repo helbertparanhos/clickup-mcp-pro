@@ -1,0 +1,62 @@
+# ClickUp MCP Pro
+
+> The most complete ClickUp MCP server — 161 typed tools + a clickup_raw escape hatch covering the entire ClickUp v2/v3 API.
+
+ClickUp MCP Pro is an MCP server that lets you control ClickUp via the Model
+Context Protocol from Claude Code, Cursor and Claude Desktop. It exposes nearly
+every ClickUp operation as a typed tool (tasks, lists, folders, spaces, docs,
+chat, goals, sprints, time tracking, custom fields, webhooks, guests) and falls
+back to `clickup_raw` for anything not yet wrapped — giving 100% API coverage.
+
+## Tools (161 typed + clickup_raw)
+
+- Tasks: create/get/update/delete, bulk create/update/delete/move, duplicate,
+  subtasks, links, dependencies, multi-list, custom field values, members.
+- Workspace/Spaces/Folders/Lists: full CRUD + templates + views.
+- Comments: task/list/chat-view comments, threaded replies.
+- Checklists, Tags, Attachments (local path / HTTPS url / base64).
+- Custom fields: list (list/folder/space/team) + set/remove values.
+- Time tracking: entries CRUD, start/stop, manual, tags, history, time-in-status.
+- Docs (v3): search, create, pages (get/create/update with replace/append/prepend).
+- Views, Goals & key results, Chat (v3), Sprints, Webhooks, User groups, Guests.
+- Members/resolvers: find_member, find_space_by_name, find_list_by_name.
+- clickup_raw: call any ClickUp v2/v3 endpoint directly.
+
+## Quick install
+
+Add to your claude_desktop_config.json or .mcp.json:
+
+```json
+{
+  "mcpServers": {
+    "clickup": {
+      "command": "npx",
+      "args": ["-y", "clickup-mcp-pro"],
+      "env": {
+        "CLICKUP_API_TOKEN": "pk_your_token",
+        "CLICKUP_TEAM_ID": "9007012345"
+      }
+    }
+  }
+}
+```
+
+## Environment variables
+
+- `CLICKUP_API_TOKEN` (required): Personal API token from ClickUp → Settings → Apps → API Token.
+- `CLICKUP_TEAM_ID` (optional): default Team/Workspace id.
+- `CLICKUP_READONLY` (optional): "true" blocks all writes.
+- `CLICKUP_DISABLE_RAW` (optional): "true" hides the clickup_raw tool.
+- `CLICKUP_UPLOAD_DIR` (optional): confine attachment file_path uploads to a directory.
+- `CLICKUP_MAX_UPLOAD_BYTES` (optional): attachment size cap (default 50 MB).
+
+## Known limitations
+
+- Guest tools require a ClickUp Enterprise plan.
+- Sprints are modeled as Lists inside a Sprint Folder (ClickUp has no Sprint API).
+- Bulk operations cap at 100 items per call and fan out client-side.
+
+## Links
+
+- GitHub: https://github.com/helbertparanhos/clickup-mcp-pro
+- npm: https://www.npmjs.com/package/clickup-mcp-pro

@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "created_at": "2026-06-09T00:00:00Z",
+  "project_type": "mcp-typescript",
+  "internal": false,
+  "references": [
+    {
+      "url": "https://github.com/taazkareem/clickup-mcp-server",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "Padrão-ouro (pago). ~150 tools cobrindo toda a API. Alvo de paridade/superação.",
+      "tools_found": ["tasks", "bulk", "lists", "folders", "spaces", "docs", "chat", "goals", "views", "time tracking", "guests", "webhooks", "user groups", "sprints", "checklists", "attachments", "custom fields", "tags", "templates"]
+    },
+    {
+      "url": "https://github.com/Nazruden/clickup-mcp-server",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "~30 tools, OAuth + token. Forte em docs/views, sem chat/goals/time tracking.",
+      "tools_found": ["tasks", "spaces", "folders", "custom fields", "docs", "views"]
+    },
+    {
+      "url": "https://github.com/DiversioTeam/clickup-mcp",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "Python, ~28 tools (30-40% da API). Bom flexible ID support; sem docs/chat/goals/webhooks.",
+      "tools_found": ["tasks", "bulk", "time tracking", "analytics", "navigation", "users"]
+    },
+    {
+      "url": "https://github.com/mikah13/mcp-clickup",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "Referência de cobertura básica de tasks/lists.",
+      "tools_found": ["tasks", "lists"]
+    },
+    {
+      "url": "https://github.com/Chykalophia/ClickUp-MCP-Server---Enhanced",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "Variante 'enhanced' usada como referência de organização.",
+      "tools_found": ["tasks", "lists", "custom fields"]
+    },
+    {
+      "url": "https://github.com/imjoshnewton/clickup-mcp-server",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "Referência adicional de implementação TypeScript.",
+      "tools_found": ["tasks", "lists"]
+    },
+    {
+      "url": "https://github.com/cvrt-jh/clickup-mcp",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "Referência adicional.",
+      "tools_found": ["tasks"]
+    },
+    {
+      "url": "https://developer.clickup.com/reference",
+      "fetched_at": "2026-06-09T00:00:00Z",
+      "description": "Documentação oficial da API ClickUp v2 + v3 (Docs/Chat).",
+      "tools_found": ["api v2", "api v3"]
+    }
+  ]
+}

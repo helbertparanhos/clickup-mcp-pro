@@ -1,0 +1,59 @@
+{
+  "name": "clickup-mcp-pro",
+  "version": "1.0.0",
+  "mcpName": "io.github.helbertparanhos/clickup-mcp-pro",
+  "description": "The most complete ClickUp MCP server — 161 typed tools covering the entire ClickUp v2/v3 API (tasks, lists, docs, chat, goals, sprints, time tracking, webhooks, guests) plus a clickup_raw escape hatch and a readonly safety mode.",
+  "type": "module",
+  "bin": {
+    "clickup-mcp-pro": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    ".env.example"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "clickup",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "claude-code",
+    "ai",
+    "project-management",
+    "tasks",
+    "automation"
+  ],
+  "author": "Helbert Paranhos / Strat Academy <contato@helbertparanhos.com.br>",
+  "license": "MIT",
+  "homepage": "https://github.com/helbertparanhos/clickup-mcp-pro",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/helbertparanhos/clickup-mcp-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/helbertparanhos/clickup-mcp-pro/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "form-data": "^4.0.1",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3"
+  }
+}

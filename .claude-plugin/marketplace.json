@@ -1,0 +1,39 @@
+{
+  "name": "clickup-mcp-pro",
+  "displayName": "ClickUp MCP Pro",
+  "description": "The most complete ClickUp MCP server — 161 typed tools + clickup_raw covering the entire ClickUp v2/v3 API.",
+  "version": "1.0.0",
+  "author": "helbertparanhos",
+  "license": "MIT",
+  "category": "Productivity",
+  "tags": ["mcp", "clickup", "project-management", "tasks", "automation"],
+  "repository": "https://github.com/helbertparanhos/clickup-mcp-pro",
+  "npm": "clickup-mcp-pro",
+  "tools": 162,
+  "transport": "stdio",
+  "auth": "env",
+  "envVars": [
+    {
+      "name": "CLICKUP_API_TOKEN",
+      "description": "ClickUp Personal API Token (pk_...). Settings → Apps → API Token.",
+      "required": true,
+      "sensitive": true
+    },
+    {
+      "name": "CLICKUP_TEAM_ID",
+      "description": "Default Team/Workspace id used when a tool omits team_id.",
+      "required": false,
+      "sensitive": false
+    },
+    {
+      "name": "CLICKUP_READONLY",
+      "description": "Set to 'true' to block all write operations.",
+      "required": false,
+      "sensitive": false
+    }
+  ],
+  "quickstart": {
+    "command": "npx",
+    "args": ["-y", "clickup-mcp-pro"]
+  }
+}
