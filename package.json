@@ -1,6 +1,6 @@
 {
   "name": "clickup-mcp-pro",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "mcpName": "io.github.helbertparanhos/clickup-mcp-pro",
   "description": "The most complete ClickUp MCP server — 161 typed tools covering the entire ClickUp v2/v3 API (tasks, lists, docs, chat, goals, sprints, time tracking, webhooks, guests) plus a clickup_raw escape hatch and a readonly safety mode.",
   "type": "module",

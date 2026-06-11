@@ -46,11 +46,15 @@ export const sprintTools = [
 
   defineTool({
     name: "get_sprint_tasks",
-    description: "Get the tasks of a sprint (the tasks in the sprint List).",
+    description:
+      "Get the tasks of a sprint, i.e. the tasks contained in the sprint's List. Returns the task list with status, assignees and dates. Use to review sprint scope or progress.",
     schema: z.object({
-      sprint_list_id: z.string().describe("Sprint List ID."),
-      include_closed: z.boolean().optional(),
-      subtasks: z.boolean().optional(),
+      sprint_list_id: z.string().describe("ID of the sprint List (from `list_sprints` or `get_active_sprint`)."),
+      include_closed: z
+        .boolean()
+        .optional()
+        .describe("If true, also include closed/done tasks. Defaults to false (open tasks only)."),
+      subtasks: z.boolean().optional().describe("If true, include subtasks in the result."),
     }),
     handler: async (args, client) =>
       client.get(`/list/${args.sprint_list_id}/task`, {

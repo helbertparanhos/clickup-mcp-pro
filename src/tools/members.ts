@@ -5,15 +5,17 @@ import { findMember, findSpaceByName, findListInSpace } from "../resolve.js";
 export const memberTools = [
   defineTool({
     name: "get_task_assignable_members",
-    description: "List the members who can be assigned to a task.",
-    schema: z.object({ task_id: z.string().describe("Task ID.") }),
+    description:
+      "List the members who can be assigned to a given task, with their ids, usernames and emails. Use to validate or resolve an assignee before updating a task.",
+    schema: z.object({ task_id: z.string().describe("ID of the task to list assignable members for.") }),
     handler: async (args, client) => client.get(`/task/${args.task_id}/member`),
   }),
 
   defineTool({
     name: "get_list_members",
-    description: "List the members who have access to a List (assignable users).",
-    schema: z.object({ list_id: z.string().describe("List ID.") }),
+    description:
+      "List the members who have access to a List (the users assignable to tasks in it), with ids, usernames and emails.",
+    schema: z.object({ list_id: z.string().describe("ID of the List to list members for.") }),
     handler: async (args, client) => client.get(`/list/${args.list_id}/member`),
   }),
 

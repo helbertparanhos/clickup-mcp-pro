@@ -5,20 +5,29 @@ import { defineTool, teamIdParam } from "../types.js";
 const permissionLevel = z
   .enum(["read", "comment", "edit", "create"])
   .optional()
-  .describe("Permission level to grant on the resource.");
+  .describe("Permission level to grant: 'read' (view only), 'comment', 'edit', or 'create'.");
+
+const guestIdParam = z
+  .union([z.string(), z.number()])
+  .describe("ID of the guest (the guest user's numeric id).");
+
+const guestPermissionFlags = {
+  can_edit_tags: z.boolean().optional().describe("Allow the guest to add/remove tags on shared items."),
+  can_see_time_spent: z.boolean().optional().describe("Allow the guest to see time tracked on shared items."),
+  can_see_time_estimated: z.boolean().optional().describe("Allow the guest to see time estimates on shared items."),
+  can_create_views: z.boolean().optional().describe("Allow the guest to create Views on shared items."),
+};
 
 export const guestTools = [
   defineTool({
     name: "invite_guest",
-    description: "Invite a guest (by email) to a Workspace. Enterprise only.",
+    description:
+      "Invite an external guest to a Workspace by email, with optional capability flags. Returns the created guest. Enterprise plan only. Use to bring in a client/contractor before sharing specific tasks, Lists or Folders with them.",
     write: true,
     schema: z.object({
       team_id: teamIdParam,
-      email: z.string().describe("Guest email."),
-      can_edit_tags: z.boolean().optional(),
-      can_see_time_spent: z.boolean().optional(),
-      can_see_time_estimated: z.boolean().optional(),
-      can_create_views: z.boolean().optional(),
+      email: z.string().describe("Email address of the guest to invite."),
+      ...guestPermissionFlags,
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -29,23 +38,22 @@ export const guestTools = [
 
   defineTool({
     name: "get_guest",
-    description: "Get a guest's details. Enterprise only.",
-    schema: z.object({ team_id: teamIdParam, guest_id: z.union([z.string(), z.number()]) }),
+    description:
+      "Get a guest's details by id — their email, capabilities and the items shared with them. Enterprise plan only.",
+    schema: z.object({ team_id: teamIdParam, guest_id: guestIdParam }),
     handler: async (args, client) =>
       client.get(`/team/${client.resolveTeamId(args.team_id)}/guest/${args.guest_id}`),
   }),
 
   defineTool({
     name: "edit_guest",
-    description: "Edit a guest's permissions. Enterprise only.",
+    description:
+      "Edit a guest's Workspace-level capabilities (tags, time visibility, view creation). Only the provided flags change. Returns the updated guest. Enterprise plan only.",
     write: true,
     schema: z.object({
       team_id: teamIdParam,
-      guest_id: z.union([z.string(), z.number()]),
-      can_edit_tags: z.boolean().optional(),
-      can_see_time_spent: z.boolean().optional(),
-      can_see_time_estimated: z.boolean().optional(),
-      can_create_views: z.boolean().optional(),
+      guest_id: guestIdParam,
+      ...guestPermissionFlags,
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -56,9 +64,10 @@ export const guestTools = [
 
   defineTool({
     name: "remove_guest",
-    description: "Remove a guest from a Workspace. Enterprise only.",
+    description:
+      "Remove a guest from a Workspace entirely, revoking all their access. This cannot be undone. Returns a confirmation. Enterprise plan only.",
     write: true,
-    schema: z.object({ team_id: teamIdParam, guest_id: z.union([z.string(), z.number()]) }),
+    schema: z.object({ team_id: teamIdParam, guest_id: guestIdParam }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
       await client.del(`/team/${teamId}/guest/${args.guest_id}`);
@@ -68,13 +77,17 @@ export const guestTools = [
 
   defineTool({
     name: "add_guest_to_task",
-    description: "Grant a guest access to a task. Enterprise only.",
+    description:
+      "Share a single task with a guest at a chosen permission level. Returns the updated guest. Enterprise plan only.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      guest_id: z.union([z.string(), z.number()]),
+      task_id: z.string().describe("ID of the task to share."),
+      guest_id: guestIdParam,
       permission_level: permissionLevel,
-      custom_task_ids: z.boolean().optional(),
+      custom_task_ids: z
+        .boolean()
+        .optional()
+        .describe("Set true when `task_id` is a custom task ID instead of a native ClickUp ID. Requires team_id."),
       team_id: teamIdParam,
     }),
     handler: async (args, client) => {
@@ -88,12 +101,16 @@ export const guestTools = [
 
   defineTool({
     name: "remove_guest_from_task",
-    description: "Revoke a guest's access to a task. Enterprise only.",
+    description:
+      "Revoke a guest's access to a single task. Returns a confirmation. Enterprise plan only.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      guest_id: z.union([z.string(), z.number()]),
-      custom_task_ids: z.boolean().optional(),
+      task_id: z.string().describe("ID of the task to unshare."),
+      guest_id: guestIdParam,
+      custom_task_ids: z
+        .boolean()
+        .optional()
+        .describe("Set true when `task_id` is a custom task ID instead of a native ClickUp ID. Requires team_id."),
       team_id: teamIdParam,
     }),
     handler: async (args, client) => {
@@ -107,11 +124,12 @@ export const guestTools = [
 
   defineTool({
     name: "add_guest_to_list",
-    description: "Grant a guest access to a List. Enterprise only.",
+    description:
+      "Share an entire List (and its tasks) with a guest at a chosen permission level. Returns the updated guest. Enterprise plan only.",
     write: true,
     schema: z.object({
-      list_id: z.string().describe("List ID."),
-      guest_id: z.union([z.string(), z.number()]),
+      list_id: z.string().describe("ID of the List to share."),
+      guest_id: guestIdParam,
       permission_level: permissionLevel,
     }),
     handler: async (args, client) =>
@@ -122,11 +140,12 @@ export const guestTools = [
 
   defineTool({
     name: "remove_guest_from_list",
-    description: "Revoke a guest's access to a List. Enterprise only.",
+    description:
+      "Revoke a guest's access to a List. Returns a confirmation. Enterprise plan only.",
     write: true,
     schema: z.object({
-      list_id: z.string().describe("List ID."),
-      guest_id: z.union([z.string(), z.number()]),
+      list_id: z.string().describe("ID of the List to unshare."),
+      guest_id: guestIdParam,
     }),
     handler: async (args, client) => {
       await client.del(`/list/${args.list_id}/guest/${args.guest_id}`);
@@ -136,11 +155,12 @@ export const guestTools = [
 
   defineTool({
     name: "add_guest_to_folder",
-    description: "Grant a guest access to a Folder. Enterprise only.",
+    description:
+      "Share an entire Folder (and its Lists/tasks) with a guest at a chosen permission level. Returns the updated guest. Enterprise plan only.",
     write: true,
     schema: z.object({
-      folder_id: z.string().describe("Folder ID."),
-      guest_id: z.union([z.string(), z.number()]),
+      folder_id: z.string().describe("ID of the Folder to share."),
+      guest_id: guestIdParam,
       permission_level: permissionLevel,
     }),
     handler: async (args, client) =>
@@ -151,11 +171,12 @@ export const guestTools = [
 
   defineTool({
     name: "remove_guest_from_folder",
-    description: "Revoke a guest's access to a Folder. Enterprise only.",
+    description:
+      "Revoke a guest's access to a Folder. Returns a confirmation. Enterprise plan only.",
     write: true,
     schema: z.object({
-      folder_id: z.string().describe("Folder ID."),
-      guest_id: z.union([z.string(), z.number()]),
+      folder_id: z.string().describe("ID of the Folder to unshare."),
+      guest_id: guestIdParam,
     }),
     handler: async (args, client) => {
       await client.del(`/folder/${args.folder_id}/guest/${args.guest_id}`);

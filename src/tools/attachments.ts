@@ -33,7 +33,10 @@ export const attachmentTools = [
         .describe("Remote HTTPS file URL to download and attach (private/loopback hosts are rejected)."),
       base64: z.string().optional().describe("Base64-encoded file content."),
       file_name: z.string().optional().describe("File name (required for base64; overrides others)."),
-      custom_task_ids: z.boolean().optional(),
+      custom_task_ids: z
+        .boolean()
+        .optional()
+        .describe("Set true when `task_id` is a custom task ID instead of a native ClickUp ID. Requires `team_id`."),
       team_id: teamIdParam,
     }),
     handler: async (args, client) => {
@@ -76,7 +79,10 @@ export const attachmentTools = [
       "List the attachments currently on a task (read from the task object — ClickUp returns attachments inline).",
     schema: z.object({
       task_id: z.string().describe("Task ID."),
-      custom_task_ids: z.boolean().optional(),
+      custom_task_ids: z
+        .boolean()
+        .optional()
+        .describe("Set true when `task_id` is a custom task ID instead of a native ClickUp ID. Requires `team_id`."),
       team_id: teamIdParam,
     }),
     handler: async (args, client) => {

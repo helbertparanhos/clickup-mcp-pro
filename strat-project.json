@@ -4,7 +4,7 @@
   "type": "mcp-server",
   "description": "MCP server mais completo para ClickUp — 161 tools tipadas cobrindo toda a API v2/v3 (tasks, docs, chat, goals, sprints, time tracking, webhooks, guests) + clickup_raw e readonly mode, para qualquer client MCP.",
   "status": "stable",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "visibility": "public",
   "install": "npx -y clickup-mcp-pro",
   "homepage": "https://www.npmjs.com/package/clickup-mcp-pro",
@@ -19,8 +19,15 @@
     "Hardening de segurança: anti-SSRF em uploads por URL, allowlist de path local, sanitização do clickup_raw"
   ],
   "depends_on": [],
-  "tags": ["clickup", "mcp", "project-management", "tasks", "automation", "typescript"],
+  "tags": [
+    "clickup",
+    "mcp",
+    "project-management",
+    "tasks",
+    "automation",
+    "typescript"
+  ],
   "mcpName": "io.github.helbertparanhos/clickup-mcp-pro",
   "owner": "Helbert Paranhos / Strat Academy",
-  "updated": "2026-06-09"
+  "updated": "2026-06-11"
 }

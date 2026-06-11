@@ -30,26 +30,32 @@ export const bulkTaskTools = [
   defineTool({
     name: "create_bulk_tasks",
     description:
-      "Create many tasks in a single List at once. Returns per-task success/error so partial failures are visible.",
+      "Create many tasks in a single List in one call (up to 100). Runs with bounded concurrency and returns a per-task success/error report, so a partial failure never loses the rest of the batch. Use to import or scaffold many tasks at once.",
     write: true,
     schema: z.object({
-      list_id: z.string().describe("Destination List ID."),
+      list_id: z.string().describe("ID of the destination List for all created tasks."),
       tasks: z
         .array(
           z.object({
-            name: z.string(),
-            description: z.string().optional(),
-            status: z.string().optional(),
-            priority: z.number().int().min(1).max(4).optional(),
-            due_date: z.union([z.string(), z.number()]).optional(),
-            assignees: z.array(z.union([z.string(), z.number()])).optional(),
-            tags: z.array(z.string()).optional(),
-            parent: z.string().optional(),
+            name: z.string().describe("Task name."),
+            description: z.string().optional().describe("Task description / body text."),
+            status: z.string().optional().describe("Status name (must exist in the List, e.g. 'to do', 'in progress')."),
+            priority: z.number().int().min(1).max(4).optional().describe("Priority: 1=urgent, 2=high, 3=normal, 4=low."),
+            due_date: z
+              .union([z.string(), z.number()])
+              .optional()
+              .describe("Due date (natural language, ISO, or epoch ms)."),
+            assignees: z
+              .array(z.union([z.string(), z.number()]))
+              .optional()
+              .describe("User ids to assign the task to."),
+            tags: z.array(z.string()).optional().describe("Tag names to apply (must already exist in the Space)."),
+            parent: z.string().optional().describe("Parent task id, to create this task as a subtask."),
           })
         )
         .min(1)
         .max(100)
-        .describe("Array of task definitions (max 100 per call)."),
+        .describe("Array of task definitions to create (1–100 per call)."),
     }),
     handler: async (args, client) => {
       const results = await mapLimit(args.tasks, CONCURRENCY, async (t) => {
@@ -67,22 +73,42 @@ export const bulkTaskTools = [
 
   defineTool({
     name: "update_bulk_tasks",
-    description: "Apply the same or per-task updates to many tasks at once.",
+    description:
+      "Apply the same set of field changes to many tasks at once (up to 100). Returns a per-task success/error report. Use to mass-change status, priority, due date, or add/remove assignees across a batch of tasks.",
     write: true,
     schema: z.object({
-      task_ids: z.array(z.string()).min(1).max(100).describe("Task IDs to update (max 100 per call)."),
+      task_ids: z.array(z.string()).min(1).max(100).describe("Task ids to update (1–100 per call)."),
       update: z
         .object({
-          name: z.string().optional(),
-          status: z.string().optional(),
-          priority: z.number().int().min(1).max(4).nullable().optional(),
-          due_date: z.union([z.string(), z.number()]).optional(),
-          assignees_add: z.array(z.union([z.string(), z.number()])).optional(),
-          assignees_rem: z.array(z.union([z.string(), z.number()])).optional(),
-          archived: z.boolean().optional(),
+          name: z.string().optional().describe("New name to set on every task."),
+          status: z.string().optional().describe("New status name to set on every task."),
+          priority: z
+            .number()
+            .int()
+            .min(1)
+            .max(4)
+            .nullable()
+            .optional()
+            .describe("New priority for every task (1=urgent..4=low), or null to clear it."),
+          due_date: z
+            .union([z.string(), z.number()])
+            .optional()
+            .describe("New due date for every task (natural language, ISO, or epoch ms)."),
+          assignees_add: z
+            .array(z.union([z.string(), z.number()]))
+            .optional()
+            .describe("User ids to ADD as assignees on every task."),
+          assignees_rem: z
+            .array(z.union([z.string(), z.number()]))
+            .optional()
+            .describe("User ids to REMOVE from assignees on every task."),
+          archived: z.boolean().optional().describe("Set true to archive every task, false to unarchive."),
         })
-        .describe("Fields applied to every task in task_ids."),
-      custom_task_ids: z.boolean().optional(),
+        .describe("Fields applied to every task in task_ids (only the provided fields change)."),
+      custom_task_ids: z
+        .boolean()
+        .optional()
+        .describe("Set true when task_ids are custom task IDs instead of native ClickUp IDs. Requires team_id."),
       team_id: teamIdParam,
     }),
     handler: async (args, client) => {
@@ -109,11 +135,15 @@ export const bulkTaskTools = [
 
   defineTool({
     name: "delete_bulk_tasks",
-    description: "Delete many tasks at once.",
+    description:
+      "Permanently delete many tasks at once (up to 100). This cannot be undone. Returns a per-task success/error report so you can see exactly which deletions succeeded.",
     write: true,
     schema: z.object({
-      task_ids: z.array(z.string()).min(1).max(100).describe("Task IDs to delete (max 100 per call)."),
-      custom_task_ids: z.boolean().optional(),
+      task_ids: z.array(z.string()).min(1).max(100).describe("Task ids to delete (1–100 per call)."),
+      custom_task_ids: z
+        .boolean()
+        .optional()
+        .describe("Set true when task_ids are custom task IDs instead of native ClickUp IDs. Requires team_id."),
       team_id: teamIdParam,
     }),
     handler: async (args, client) => {
@@ -134,11 +164,11 @@ export const bulkTaskTools = [
   defineTool({
     name: "move_bulk_tasks",
     description:
-      "Move many tasks into a target List (adds them to the list; uses multi-list association).",
+      "Add many tasks to a target List at once (up to 100), using ClickUp's multi-list association (the tasks also remain in their original List). Returns a per-task success/error report.",
     write: true,
     schema: z.object({
-      task_ids: z.array(z.string()).min(1).max(100).describe("Task IDs to move (max 100 per call)."),
-      list_id: z.string().describe("Destination List ID."),
+      task_ids: z.array(z.string()).min(1).max(100).describe("Task ids to add to the target List (1–100 per call)."),
+      list_id: z.string().describe("ID of the destination List."),
     }),
     handler: async (args, client) => {
       const results = await mapLimit(args.task_ids, CONCURRENCY, async (id) => {

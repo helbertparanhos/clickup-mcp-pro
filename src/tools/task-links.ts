@@ -2,18 +2,22 @@ import { z } from "zod";
 import { defineTool, teamIdParam } from "../types.js";
 
 const idAddressing = {
-  custom_task_ids: z.boolean().optional(),
+  custom_task_ids: z
+    .boolean()
+    .optional()
+    .describe("Set true when the task ids are custom task IDs instead of native ClickUp IDs. Requires `team_id`."),
   team_id: teamIdParam,
 };
 
 export const taskLinkTools = [
   defineTool({
     name: "add_task_link",
-    description: "Link two tasks together (non-dependency relationship).",
+    description:
+      "Link two tasks together with a plain (non-dependency) relationship, so they reference each other. Use for 'related to' connections that don't imply blocking order. Returns the linked task.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      links_to: z.string().describe("Task ID to link to."),
+      task_id: z.string().describe("ID of the source task."),
+      links_to: z.string().describe("ID of the task to link it to."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -24,11 +28,12 @@ export const taskLinkTools = [
 
   defineTool({
     name: "delete_task_link",
-    description: "Remove a link between two tasks.",
+    description:
+      "Remove a plain link between two tasks (created by `add_task_link`). Returns a confirmation. Does not affect dependencies.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      links_to: z.string().describe("Linked task ID to remove."),
+      task_id: z.string().describe("ID of the source task."),
+      links_to: z.string().describe("ID of the linked task to unlink."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -41,12 +46,18 @@ export const taskLinkTools = [
   defineTool({
     name: "add_task_dependency",
     description:
-      "Create a dependency between tasks. Provide either depends_on (this task waits on it) or dependency_of (this task blocks it).",
+      "Create a blocking dependency between tasks. Provide `depends_on` to make this task wait on another (this is blocked until that finishes), or `dependency_of` to make this task block another. Exactly one is required. Returns a confirmation.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      depends_on: z.string().optional().describe("Task this one depends on (waits for)."),
-      dependency_of: z.string().optional().describe("Task that depends on this one (is blocked by it)."),
+      task_id: z.string().describe("ID of the task the dependency is anchored on."),
+      depends_on: z
+        .string()
+        .optional()
+        .describe("ID of the task that THIS task waits for (this task is blocked until that one completes)."),
+      dependency_of: z
+        .string()
+        .optional()
+        .describe("ID of the task that depends on THIS task (that task is blocked until this one completes)."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -62,12 +73,13 @@ export const taskLinkTools = [
 
   defineTool({
     name: "delete_task_dependency",
-    description: "Remove a dependency between tasks.",
+    description:
+      "Remove a blocking dependency between tasks. Provide the same `depends_on` or `dependency_of` used to create it (exactly one is required). Returns a confirmation.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      depends_on: z.string().optional(),
-      dependency_of: z.string().optional(),
+      task_id: z.string().describe("ID of the task the dependency is anchored on."),
+      depends_on: z.string().optional().describe("ID of the task THIS task was waiting for, to remove that link."),
+      dependency_of: z.string().optional().describe("ID of the task that depended on THIS task, to remove that link."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -83,11 +95,12 @@ export const taskLinkTools = [
 
   defineTool({
     name: "add_task_to_list",
-    description: "Add an existing task to an additional List (multi-list / 'Tasks in Multiple Lists').",
+    description:
+      "Add an existing task to an additional List (ClickUp's 'Tasks in Multiple Lists' feature), so it appears in more than one List without being moved. Returns a confirmation.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      list_id: z.string().describe("List ID to add the task to."),
+      task_id: z.string().describe("ID of the task to add."),
+      list_id: z.string().describe("ID of the additional List to add the task to."),
     }),
     handler: async (args, client) => {
       await client.post(`/list/${args.list_id}/task/${args.task_id}`, {});
@@ -97,11 +110,12 @@ export const taskLinkTools = [
 
   defineTool({
     name: "remove_task_from_list",
-    description: "Remove a task from an additional List (multi-list association).",
+    description:
+      "Remove a task from an additional List it was added to via 'Tasks in Multiple Lists'. The task remains in its home List. Returns a confirmation.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      list_id: z.string().describe("List ID to remove the task from."),
+      task_id: z.string().describe("ID of the task to remove."),
+      list_id: z.string().describe("ID of the additional List to remove the task from."),
     }),
     handler: async (args, client) => {
       await client.del(`/list/${args.list_id}/task/${args.task_id}`, {});

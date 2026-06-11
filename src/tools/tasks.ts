@@ -6,32 +6,35 @@ const idAddressing = {
   custom_task_ids: z
     .boolean()
     .optional()
-    .describe("Treat task_id as a custom id (requires team_id)."),
+    .describe("Set true to treat `task_id` as a custom task ID instead of a native ClickUp ID. Requires `team_id`."),
   team_id: teamIdParam,
 };
 
 const taskWriteBody = z.object({
-  name: z.string().optional(),
-  description: z.string().optional().describe("Plain-text description."),
-  markdown_content: z.string().optional().describe("Markdown description (overrides description)."),
-  status: z.string().optional(),
-  priority: z.number().int().min(1).max(4).nullable().optional().describe("1=urgent .. 4=low, null clears."),
-  due_date: dateInput.optional(),
-  due_date_time: z.boolean().optional(),
-  start_date: dateInput.optional(),
-  start_date_time: z.boolean().optional(),
-  time_estimate: z.number().int().optional().describe("Estimate in milliseconds."),
+  name: z.string().optional().describe("Task name/title."),
+  description: z.string().optional().describe("Plain-text task description."),
+  markdown_content: z.string().optional().describe("Markdown task description. Takes precedence over `description` if both are given."),
+  status: z.string().optional().describe("Status name (must exist in the task's List, e.g. 'to do', 'in progress', 'complete')."),
+  priority: z.number().int().min(1).max(4).nullable().optional().describe("Priority: 1=urgent, 2=high, 3=normal, 4=low; null clears it."),
+  due_date: dateInput.optional().describe("Due date (natural language, ISO, or epoch ms)."),
+  due_date_time: z.boolean().optional().describe("If true, the due date includes a specific time of day."),
+  start_date: dateInput.optional().describe("Start date (natural language, ISO, or epoch ms)."),
+  start_date_time: z.boolean().optional().describe("If true, the start date includes a specific time of day."),
+  time_estimate: z.number().int().optional().describe("Time estimate in milliseconds."),
   assignees: z
     .array(z.union([z.string(), z.number()]))
     .optional()
     .describe("Full set of assignee user ids. On update this REPLACES the current assignees (use assignees_add/assignees_rem for incremental changes)."),
-  tags: z.array(z.string()).optional(),
-  parent: z.string().optional().describe("Parent task id (makes this a subtask)."),
+  tags: z.array(z.string()).optional().describe("Tag names to set on the task (must already exist in the Space)."),
+  parent: z.string().optional().describe("Parent task id; set to make this task a subtask of that parent."),
   custom_fields: z
-    .array(z.object({ id: z.string(), value: z.any() }))
+    .array(z.object({
+      id: z.string().describe("Custom field id."),
+      value: z.any().describe("Value in the shape required by the field's type."),
+    }))
     .optional()
-    .describe("Array of { id, value } custom field assignments."),
-  custom_item_id: z.number().int().nullable().optional().describe("Custom task type id."),
+    .describe("Array of custom field assignments as { id, value } objects."),
+  custom_item_id: z.number().int().nullable().optional().describe("Custom task type id (from `get_custom_task_types`); null for the default Task type."),
 });
 
 function buildBody(args: Record<string, any>) {
@@ -45,28 +48,32 @@ export const taskTools = [
   defineTool({
     name: "get_tasks",
     description:
-      "Get tasks in a List with rich filtering (status, assignees, tags, due/created/updated date ranges, subtasks, custom fields). Paginated.",
+      "Get tasks in a specific List with rich filtering — by status, assignees, tags, and due/created/updated date ranges — plus ordering, subtasks and custom-field filters. Paginated. Use when you know which List the tasks live in.",
     schema: z.object({
-      list_id: z.string().describe("List ID."),
-      archived: z.boolean().optional(),
-      include_closed: z.boolean().optional(),
-      page: z.number().int().optional().describe("0-based page."),
-      order_by: z.enum(["created", "updated", "due_date", "id"]).optional(),
-      reverse: z.boolean().optional(),
-      subtasks: z.boolean().optional(),
-      statuses: z.array(z.string()).optional(),
-      assignees: z.array(z.union([z.string(), z.number()])).optional(),
-      tags: z.array(z.string()).optional(),
-      due_date_gt: dateInput.optional(),
-      due_date_lt: dateInput.optional(),
-      date_created_gt: dateInput.optional(),
-      date_created_lt: dateInput.optional(),
-      date_updated_gt: dateInput.optional(),
-      date_updated_lt: dateInput.optional(),
+      list_id: z.string().describe("ID of the List to read tasks from."),
+      archived: z.boolean().optional().describe("If true, include archived tasks. Defaults to false."),
+      include_closed: z.boolean().optional().describe("If true, also include closed/done tasks."),
+      page: z.number().int().optional().describe("0-based page number for pagination. Defaults to 0."),
+      order_by: z.enum(["created", "updated", "due_date", "id"]).optional().describe("Field to sort by."),
+      reverse: z.boolean().optional().describe("If true, reverse the sort order (descending)."),
+      subtasks: z.boolean().optional().describe("If true, include subtasks in the results."),
+      statuses: z.array(z.string()).optional().describe("Only return tasks whose status name is in this list."),
+      assignees: z.array(z.union([z.string(), z.number()])).optional().describe("Only return tasks assigned to any of these user ids."),
+      tags: z.array(z.string()).optional().describe("Only return tasks that have all of these tag names."),
+      due_date_gt: dateInput.optional().describe("Only tasks due AFTER this date (natural language, ISO, or epoch ms)."),
+      due_date_lt: dateInput.optional().describe("Only tasks due BEFORE this date."),
+      date_created_gt: dateInput.optional().describe("Only tasks created AFTER this date."),
+      date_created_lt: dateInput.optional().describe("Only tasks created BEFORE this date."),
+      date_updated_gt: dateInput.optional().describe("Only tasks updated AFTER this date."),
+      date_updated_lt: dateInput.optional().describe("Only tasks updated BEFORE this date."),
       custom_fields: z
-        .array(z.object({ field_id: z.string(), operator: z.string(), value: z.any() }))
+        .array(z.object({
+          field_id: z.string().describe("Custom field id to filter on."),
+          operator: z.string().describe("Comparison operator, e.g. '=', '<', '>', 'IS NOT NULL'."),
+          value: z.any().describe("Value to compare against."),
+        }))
         .optional()
-        .describe("Array of custom-field filters."),
+        .describe("Array of custom-field filter conditions."),
     }),
     handler: async (args, client) => {
       const { list_id, custom_fields, ...rest } = args;
@@ -81,11 +88,12 @@ export const taskTools = [
 
   defineTool({
     name: "get_task",
-    description: "Get a single task by id, including subtasks, custom fields and markdown.",
+    description:
+      "Get a single task by id with full detail — status, assignees, custom fields, dates, and optionally subtasks and the markdown description. Use to inspect one known task.",
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      include_subtasks: z.boolean().optional(),
-      include_markdown_description: z.boolean().optional(),
+      task_id: z.string().describe("ID of the task to fetch."),
+      include_subtasks: z.boolean().optional().describe("If true, include the task's subtasks in the response."),
+      include_markdown_description: z.boolean().optional().describe("If true, include the description rendered as markdown."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -97,22 +105,22 @@ export const taskTools = [
   defineTool({
     name: "get_workspace_tasks",
     description:
-      "Filtered/team-wide task search across the whole Workspace (filter by space/folder/list ids, statuses, assignees, tags, due dates). The deep search used when you don't know which list a task is in.",
+      "Search tasks across the entire Workspace with filters (Spaces, Folders, Lists, statuses, assignees, tags, due dates). This is the deep search to use when you don't know which List a task is in. Paginated.",
     schema: z.object({
       team_id: teamIdParam,
-      page: z.number().int().optional(),
-      order_by: z.enum(["created", "updated", "due_date", "id"]).optional(),
-      reverse: z.boolean().optional(),
-      subtasks: z.boolean().optional(),
-      include_closed: z.boolean().optional(),
-      space_ids: z.array(z.string()).optional(),
-      project_ids: z.array(z.string()).optional().describe("Folder ids."),
-      list_ids: z.array(z.string()).optional(),
-      statuses: z.array(z.string()).optional(),
-      assignees: z.array(z.union([z.string(), z.number()])).optional(),
-      tags: z.array(z.string()).optional(),
-      due_date_gt: dateInput.optional(),
-      due_date_lt: dateInput.optional(),
+      page: z.number().int().optional().describe("0-based page number for pagination. Defaults to 0."),
+      order_by: z.enum(["created", "updated", "due_date", "id"]).optional().describe("Field to sort by."),
+      reverse: z.boolean().optional().describe("If true, reverse the sort order (descending)."),
+      subtasks: z.boolean().optional().describe("If true, include subtasks in the results."),
+      include_closed: z.boolean().optional().describe("If true, also include closed/done tasks."),
+      space_ids: z.array(z.string()).optional().describe("Restrict the search to these Space ids."),
+      project_ids: z.array(z.string()).optional().describe("Restrict the search to these Folder ids (ClickUp calls Folders 'projects' here)."),
+      list_ids: z.array(z.string()).optional().describe("Restrict the search to these List ids."),
+      statuses: z.array(z.string()).optional().describe("Only return tasks whose status name is in this list."),
+      assignees: z.array(z.union([z.string(), z.number()])).optional().describe("Only return tasks assigned to any of these user ids."),
+      tags: z.array(z.string()).optional().describe("Only return tasks that have all of these tag names."),
+      due_date_gt: dateInput.optional().describe("Only tasks due AFTER this date (natural language, ISO, or epoch ms)."),
+      due_date_lt: dateInput.optional().describe("Only tasks due BEFORE this date."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -126,10 +134,14 @@ export const taskTools = [
 
   defineTool({
     name: "create_task",
-    description: "Create a task in a List.",
+    description:
+      "Create a new task in a List, setting any fields you provide (description, status, priority, dates, assignees, tags, custom fields, parent for subtasks). Returns the created task with its id.",
     write: true,
     schema: z
-      .object({ list_id: z.string().describe("List ID."), name: z.string() })
+      .object({
+        list_id: z.string().describe("ID of the List to create the task in."),
+        name: z.string().describe("Name/title of the new task."),
+      })
       .merge(taskWriteBody.omit({ name: true }))
       .extend(idAddressing),
     handler: async (args, client) => {
@@ -140,15 +152,16 @@ export const taskTools = [
 
   defineTool({
     name: "update_task",
-    description: "Update any field of a task. Pass only the fields you want to change.",
+    description:
+      "Update any field of a task — pass only the fields you want to change. For assignees, `assignees` replaces the whole set, while `assignees_add`/`assignees_rem` change them incrementally. Returns the updated task.",
     write: true,
     schema: z
-      .object({ task_id: z.string().describe("Task ID.") })
+      .object({ task_id: z.string().describe("ID of the task to update.") })
       .merge(taskWriteBody)
       .extend({
-        archived: z.boolean().optional(),
-        assignees_add: z.array(z.union([z.string(), z.number()])).optional().describe("Assignees to add (incremental)."),
-        assignees_rem: z.array(z.union([z.string(), z.number()])).optional().describe("Assignees to remove (incremental)."),
+        archived: z.boolean().optional().describe("Set true to archive the task, false to unarchive it."),
+        assignees_add: z.array(z.union([z.string(), z.number()])).optional().describe("User ids to ADD as assignees (incremental, leaves others in place)."),
+        assignees_rem: z.array(z.union([z.string(), z.number()])).optional().describe("User ids to REMOVE from assignees (incremental)."),
         ...idAddressing,
       }),
     handler: async (args, client) => {
@@ -184,9 +197,10 @@ export const taskTools = [
 
   defineTool({
     name: "delete_task",
-    description: "Delete a task permanently.",
+    description:
+      "Permanently delete a task by id. This cannot be undone. Returns a confirmation with the deleted task id.",
     write: true,
-    schema: z.object({ task_id: z.string().describe("Task ID."), ...idAddressing }),
+    schema: z.object({ task_id: z.string().describe("ID of the task to delete."), ...idAddressing }),
     handler: async (args, client) => {
       const { task_id, ...params } = args;
       await client.del(`/task/${task_id}`, { params });
@@ -196,8 +210,9 @@ export const taskTools = [
 
   defineTool({
     name: "get_subtasks",
-    description: "Get the subtasks of a task.",
-    schema: z.object({ task_id: z.string().describe("Parent task ID."), ...idAddressing }),
+    description:
+      "Get the subtasks of a parent task. Returns the parent task with its subtasks included. Use to enumerate a task's children.",
+    schema: z.object({ task_id: z.string().describe("ID of the parent task."), ...idAddressing }),
     handler: async (args, client) => {
       const { task_id, ...params } = args;
       return client.get(`/task/${task_id}`, {
@@ -209,12 +224,12 @@ export const taskTools = [
   defineTool({
     name: "duplicate_task",
     description:
-      "Duplicate a task into a target List by reading it and re-creating it (name, description, status, priority, assignees, tags, dates).",
+      "Duplicate a task into a target List by reading the source and re-creating it (name, description, status, priority, assignees, tags and dates). Returns the new task. The copy is named '<name> (copy)' unless you override it.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Source task ID."),
-      list_id: z.string().describe("Destination List ID."),
-      name: z.string().optional().describe("Override name (defaults to '<name> (copy)')."),
+      task_id: z.string().describe("ID of the source task to duplicate."),
+      list_id: z.string().describe("ID of the destination List for the copy."),
+      name: z.string().optional().describe("Name for the copy. Defaults to '<source name> (copy)'."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -237,13 +252,17 @@ export const taskTools = [
 
   defineTool({
     name: "set_task_custom_field_value",
-    description: "Set the value of a custom field on a task.",
+    description:
+      "Set (or overwrite) a custom field's value on a task. The `value` shape depends on the field type (text/number primitive, drop_down option id, labels array, date epoch ms, users array). Look up the type with a get_*_custom_fields tool first.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      field_id: z.string().describe("Custom field ID."),
-      value: z.any().describe("New value (shape depends on field type)."),
-      value_options: z.record(z.any()).optional(),
+      task_id: z.string().describe("ID of the task to set the field on."),
+      field_id: z.string().describe("ID of the custom field."),
+      value: z.any().describe("Value to set, in the shape required by the field's type (see the tool description)."),
+      value_options: z
+        .record(z.any())
+        .optional()
+        .describe("Optional extra options for the value, e.g. { time: true } to include a time component for date fields."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -257,11 +276,12 @@ export const taskTools = [
 
   defineTool({
     name: "remove_task_custom_field_value",
-    description: "Clear/remove a custom field value from a task.",
+    description:
+      "Clear a custom field's value on a task, resetting it to empty. Returns a confirmation with the task and field ids.",
     write: true,
     schema: z.object({
-      task_id: z.string().describe("Task ID."),
-      field_id: z.string().describe("Custom field ID."),
+      task_id: z.string().describe("ID of the task to clear the field on."),
+      field_id: z.string().describe("ID of the custom field to clear."),
       ...idAddressing,
     }),
     handler: async (args, client) => {
@@ -275,8 +295,9 @@ export const taskTools = [
 
   defineTool({
     name: "get_task_members",
-    description: "List the members who have access to a task.",
-    schema: z.object({ task_id: z.string().describe("Task ID.") }),
+    description:
+      "List the members who have access to a task, with their ids, usernames and emails. Use to see who can view or be assigned to the task.",
+    schema: z.object({ task_id: z.string().describe("ID of the task to list members for.") }),
     handler: async (args, client) => client.get(`/task/${args.task_id}/member`),
   }),
 ];

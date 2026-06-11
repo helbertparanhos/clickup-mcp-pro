@@ -12,7 +12,8 @@ export const workspaceTools = [
 
   defineTool({
     name: "get_workspace_seats",
-    description: "Get seat usage (used/total) for a Workspace's members and guests.",
+    description:
+      "Get seat usage for a Workspace — how many member and guest seats are used vs. the total available on the current plan. Use to check capacity before inviting people.",
     schema: z.object({ team_id: teamIdParam }),
     handler: async (args, client) =>
       client.get(`/team/${client.resolveTeamId(args.team_id)}/seats`),
@@ -20,7 +21,8 @@ export const workspaceTools = [
 
   defineTool({
     name: "get_workspace_plan",
-    description: "Get the current plan (name and id) of a Workspace.",
+    description:
+      "Get the current subscription plan (name and id) of a Workspace, e.g. Free, Unlimited, Business. Use to know which features and limits apply.",
     schema: z.object({ team_id: teamIdParam }),
     handler: async (args, client) =>
       client.get(`/team/${client.resolveTeamId(args.team_id)}/plan`),
@@ -42,7 +44,8 @@ export const workspaceTools = [
 
   defineTool({
     name: "get_custom_task_types",
-    description: "List the custom task types defined in a Workspace (e.g. Bug, Feature).",
+    description:
+      "List the custom task types defined in a Workspace (e.g. Bug, Feature, Milestone). Returns each type's id and name. Use to find a `custom_item_id` when creating tasks of a specific type.",
     schema: z.object({ team_id: teamIdParam }),
     handler: async (args, client) =>
       client.get(`/team/${client.resolveTeamId(args.team_id)}/custom_item`),
@@ -50,7 +53,8 @@ export const workspaceTools = [
 
   defineTool({
     name: "get_authorized_user",
-    description: "Get details of the user that owns the configured API token.",
+    description:
+      "Get the profile of the user that owns the configured API token — id, username, email and color. Use to identify 'me' for self-assignment or filtering by the current user.",
     schema: z.object({}),
     handler: async (_args, client) => client.get(`/user`),
   }),

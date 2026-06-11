@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/) and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-06-11
+
+### Changed
+- **Documentation quality pass across all 162 tools** — every tool description
+  rewritten to state what it does, when to use it, and what it returns; and a
+  `.describe()` added to every parameter (including optional and shared ones).
+  Improves agent tool-selection accuracy and the Glama Tool Definition Quality
+  score. No behavior, tool names, schemas or signatures changed.
+
 ## [1.0.0] - 2026-06-09
 
 ### Added

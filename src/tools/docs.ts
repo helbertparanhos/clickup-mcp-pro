@@ -5,15 +5,16 @@ import { defineTool, teamIdParam } from "../types.js";
 export const docTools = [
   defineTool({
     name: "search_docs",
-    description: "Search/list Docs in a Workspace (v3).",
+    description:
+      "Search or list Docs in a Workspace (ClickUp Docs v3). Returns matching Docs with their ids, titles and locations. Use to find a `doc_id` by keyword or to browse Docs under a parent. Paginate with `cursor`.",
     schema: z.object({
       team_id: teamIdParam,
-      query: z.string().optional().describe("Search text."),
-      parent_id: z.string().optional(),
-      parent_type: z.string().optional(),
-      cursor: z.string().optional().describe("Pagination cursor (next_cursor from a previous call)."),
-      limit: z.number().int().optional(),
-      include_archived: z.boolean().optional(),
+      query: z.string().optional().describe("Text to search Doc titles/content for. Omit to list all Docs."),
+      parent_id: z.string().optional().describe("Restrict results to Docs under this parent container's id."),
+      parent_type: z.string().optional().describe("Type of the parent container (used together with parent_id)."),
+      cursor: z.string().optional().describe("Pagination cursor (the `next_cursor` returned by a previous call)."),
+      limit: z.number().int().optional().describe("Maximum number of Docs to return in this page."),
+      include_archived: z.boolean().optional().describe("If true, also include archived Docs. Defaults to false."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -24,8 +25,12 @@ export const docTools = [
 
   defineTool({
     name: "get_doc",
-    description: "Get a single Doc by id (v3).",
-    schema: z.object({ team_id: teamIdParam, doc_id: z.string().describe("Doc ID.") }),
+    description:
+      "Get a single Doc's metadata by id (ClickUp Docs v3) — its title, parent location and settings. Use `get_doc_pages` to read the actual content.",
+    schema: z.object({
+      team_id: teamIdParam,
+      doc_id: z.string().describe("ID of the Doc to fetch."),
+    }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
       return client.get(`/workspaces/${teamId}/docs/${args.doc_id}`, { version: "v3" });
@@ -34,17 +39,21 @@ export const docTools = [
 
   defineTool({
     name: "create_doc",
-    description: "Create a new Doc in a Workspace (v3).",
+    description:
+      "Create a new Doc in a Workspace (ClickUp Docs v3), optionally nested under a Space/Folder/List and with a visibility setting. Returns the created Doc with its id. Add pages afterwards with `create_doc_page`.",
     write: true,
     schema: z.object({
       team_id: teamIdParam,
-      name: z.string().describe("Doc title."),
+      name: z.string().describe("Title of the new Doc."),
       parent: z
-        .object({ id: z.string(), type: z.number().int() })
+        .object({
+          id: z.string().describe("ID of the parent container."),
+          type: z.number().int().describe("Parent container type: 4=Space, 5=Folder, 6=List, 7=Everything, 12=Workspace."),
+        })
         .optional()
-        .describe("Parent location { id, type }. type: 4=Space,5=Folder,6=List,7=Everything,12=Workspace."),
-      visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
-      create_page: z.boolean().optional().describe("Create an initial empty page. Default true."),
+        .describe("Where to place the Doc. Omit to create it at the Workspace level."),
+      visibility: z.enum(["PUBLIC", "PRIVATE"]).optional().describe("Doc visibility. PUBLIC = visible to the Workspace, PRIVATE = only you."),
+      create_page: z.boolean().optional().describe("If true (default), create an initial empty page in the Doc."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -55,11 +64,12 @@ export const docTools = [
 
   defineTool({
     name: "get_doc_page_listing",
-    description: "Get the page tree/listing of a Doc (ids + hierarchy, v3).",
+    description:
+      "Get the page tree of a Doc (ClickUp Docs v3) — page ids, titles and their nesting hierarchy, without the full content. Use to navigate a Doc's structure before fetching a specific page.",
     schema: z.object({
       team_id: teamIdParam,
-      doc_id: z.string().describe("Doc ID."),
-      max_page_depth: z.number().int().optional(),
+      doc_id: z.string().describe("ID of the Doc whose page tree to fetch."),
+      max_page_depth: z.number().int().optional().describe("Limit how many levels of nested pages to return. Omit for all levels."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -72,11 +82,15 @@ export const docTools = [
 
   defineTool({
     name: "get_doc_pages",
-    description: "Get all pages of a Doc with their content (v3).",
+    description:
+      "Get every page of a Doc together with its full content (ClickUp Docs v3). Returns content as markdown by default. Use to read an entire Doc at once.",
     schema: z.object({
       team_id: teamIdParam,
-      doc_id: z.string().describe("Doc ID."),
-      content_format: z.enum(["text/md", "text/html"]).optional().describe("Default text/md."),
+      doc_id: z.string().describe("ID of the Doc whose pages to fetch."),
+      content_format: z
+        .enum(["text/md", "text/html"])
+        .optional()
+        .describe("Format to return page content in: 'text/md' (default) or 'text/html'."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -89,12 +103,16 @@ export const docTools = [
 
   defineTool({
     name: "get_doc_page",
-    description: "Get a single Doc page (with content, v3).",
+    description:
+      "Get a single page of a Doc with its content (ClickUp Docs v3). Returns content as markdown by default. Use after `get_doc_page_listing` to read one specific page.",
     schema: z.object({
       team_id: teamIdParam,
-      doc_id: z.string().describe("Doc ID."),
-      page_id: z.string().describe("Page ID."),
-      content_format: z.enum(["text/md", "text/html"]).optional(),
+      doc_id: z.string().describe("ID of the Doc the page belongs to."),
+      page_id: z.string().describe("ID of the page to fetch."),
+      content_format: z
+        .enum(["text/md", "text/html"])
+        .optional()
+        .describe("Format to return the content in: 'text/md' (default) or 'text/html'."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -107,16 +125,20 @@ export const docTools = [
 
   defineTool({
     name: "create_doc_page",
-    description: "Create a new page inside a Doc (v3).",
+    description:
+      "Create a new page inside a Doc (ClickUp Docs v3), optionally nested under an existing page and with initial content. Returns the created page with its id.",
     write: true,
     schema: z.object({
       team_id: teamIdParam,
-      doc_id: z.string().describe("Doc ID."),
-      name: z.string().describe("Page title."),
-      content: z.string().optional().describe("Page body."),
-      content_format: z.enum(["text/md", "text/html"]).optional().describe("Default text/md."),
-      parent_page_id: z.string().optional().describe("Nest under another page."),
-      sub_title: z.string().optional(),
+      doc_id: z.string().describe("ID of the Doc to add the page to."),
+      name: z.string().describe("Title of the new page."),
+      content: z.string().optional().describe("Initial page body content. Format is set by `content_format`."),
+      content_format: z
+        .enum(["text/md", "text/html"])
+        .optional()
+        .describe("Format of the `content` field: 'text/md' (default) or 'text/html'."),
+      parent_page_id: z.string().optional().describe("ID of an existing page to nest this new page under."),
+      sub_title: z.string().optional().describe("Optional subtitle shown under the page title."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
@@ -131,20 +153,23 @@ export const docTools = [
   defineTool({
     name: "update_doc_page",
     description:
-      "Update a Doc page. Use content_edit_mode to replace, append or prepend the content (v3).",
+      "Update a Doc page's title, subtitle or content (ClickUp Docs v3). Use `content_edit_mode` to replace, append to, or prepend the existing content. Only the provided fields change. Returns the updated page.",
     write: true,
     schema: z.object({
       team_id: teamIdParam,
-      doc_id: z.string().describe("Doc ID."),
-      page_id: z.string().describe("Page ID."),
-      name: z.string().optional(),
-      sub_title: z.string().optional(),
-      content: z.string().optional(),
-      content_format: z.enum(["text/md", "text/html"]).optional(),
+      doc_id: z.string().describe("ID of the Doc the page belongs to."),
+      page_id: z.string().describe("ID of the page to update."),
+      name: z.string().optional().describe("New page title. Omit to keep current."),
+      sub_title: z.string().optional().describe("New subtitle. Omit to keep current."),
+      content: z.string().optional().describe("Content to apply, combined with `content_edit_mode`."),
+      content_format: z
+        .enum(["text/md", "text/html"])
+        .optional()
+        .describe("Format of the `content` field: 'text/md' (default) or 'text/html'."),
       content_edit_mode: z
         .enum(["replace", "append", "prepend"])
         .optional()
-        .describe("How content is applied. Default replace."),
+        .describe("How `content` is applied: 'replace' (default) overwrites, 'append' adds to the end, 'prepend' adds to the start."),
     }),
     handler: async (args, client) => {
       const teamId = client.resolveTeamId(args.team_id);
