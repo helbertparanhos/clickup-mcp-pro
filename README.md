@@ -2,9 +2,25 @@
 
 > The most complete **ClickUp** MCP server — **161 typed tools + `clickup_raw`** covering the entire ClickUp v2/v3 API. Built to match or beat the paid alternatives, free and open source.
 
-[![npm](https://img.shields.io/npm/v/clickup-mcp-pro.svg?style=flat-square)](https://www.npmjs.com/package/clickup-mcp-pro)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/helbertparanhos/clickup-mcp-pro?style=flat-square)](https://github.com/helbertparanhos/clickup-mcp-pro/stargazers)
+[![npm version](https://img.shields.io/npm/v/clickup-mcp-pro.svg?style=flat-square)](https://www.npmjs.com/package/clickup-mcp-pro)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/helbertparanhos/clickup-mcp-pro?style=flat-square)](https://github.com/helbertparanhos/clickup-mcp-pro/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/helbertparanhos/clickup-mcp-pro?style=flat-square)](https://github.com/helbertparanhos/clickup-mcp-pro/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/helbertparanhos/clickup-mcp-pro?style=flat-square)](https://github.com/helbertparanhos/clickup-mcp-pro/issues)
+[![Glama Quality](https://glama.ai/mcp/servers/helbertparanhos/clickup-mcp-pro/badges/score.svg)](https://glama.ai/mcp/servers/helbertparanhos/clickup-mcp-pro)
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-000000?style=flat-square)](https://modelcontextprotocol.io/)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-D97706?style=flat-square)](https://claude.ai/code)
+[![Cursor](https://img.shields.io/badge/Cursor-Compatible-4F46E5?style=flat-square)](https://cursor.sh)
+[![Claude Desktop](https://img.shields.io/badge/Claude%20Desktop-Compatible-D97706?style=flat-square)](https://claude.ai/download)
+
+[![Instagram](https://img.shields.io/badge/@helbertparanhos-E4405F?style=flat-square&logo=instagram&logoColor=white)](https://www.instagram.com/helbertparanhos)
+[![YouTube](https://img.shields.io/badge/stratacademy-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://www.youtube.com/@stratacademy)
+[![LinkedIn](https://img.shields.io/badge/helbert--paranhos-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/helbert-paranhos/)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/helbertparanhos)
+[![Strat Academy](https://img.shields.io/badge/Strat%20Academy-8B5CF6?style=flat-square)](https://stratacademy.com.br)
 
 ClickUp MCP Pro exposes nearly every ClickUp operation as a typed [Model Context Protocol](https://modelcontextprotocol.io) tool — so Claude Code (and any MCP client) can drive your entire workspace: tasks, lists, folders, spaces, docs, chat, goals, sprints, time tracking, custom fields, webhooks, guests and more. When a niche endpoint isn't wrapped, `clickup_raw` reaches the rest of the API directly, giving you **100% coverage**.
 
